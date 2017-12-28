@@ -29,15 +29,28 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 ########################################################################
 # Compiler specific setup
 ########################################################################
-if(CMAKE_COMPILER_IS_GNUCC AND NOT WIN32)
+if (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") AND NOT WIN32)
     ADD_DEFINITIONS(-Wall)
     ADD_DEFINITIONS(-Wextra)
-    ADD_DEFINITIONS(-Wno-unused)
     ADD_DEFINITIONS(-Wsign-compare)
-    ADD_DEFINITIONS(-g3 -O0)
-    ADD_DEFINITIONS(-std=gnu99)
+    ADD_DEFINITIONS(-Wno-unused)
+    ADD_DEFINITIONS(-Wno-unused-parameter)
+    ADD_DEFINITIONS(-Wno-missing-field-initializers)
+    ADD_DEFINITIONS(-std=c99)
+    ADD_DEFINITIONS(-pedantic)
+    # for strdup
+    ADD_DEFINITIONS(-D_GNU_SOURCE)
     #http://gcc.gnu.org/wiki/Visibility
     add_definitions(-fvisibility=hidden)
+
+    # CMake Release default for GCC/Clang is "-O3 -DNDEBUG"
+    # set(CMAKE_C_FLAGS_RELEASE -O2)
+    # CMake Debug default for GCC/Clang is "-g -DNDEBUG"
+    # set(CMAKE_C_FLAGS_DEBUG -g3 -O0)
+endif()
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+    # make sure we don't accidentally copy more than an int
+    ADD_DEFINITIONS(-Wlarge-by-value-copy=8)
 endif()
 
 ########################################################################
@@ -45,13 +58,29 @@ endif()
 ########################################################################
 find_package(PkgConfig)
 find_package(LibRTLSDR)
+list(APPEND SDR_LIBRARIES ${LIBRTLSDR_LIBRARIES})
+
+# cmake -DCMAKE_BUILD_TYPE=Profile ..
+# CPUPROFILE=prof.out ./src/rtl_433 ...
+# pprof -text ./src/rtl_433 prof.out
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Profile")
+    message(STATUS "Build type set to Profile. Linking GPerfTools.")
+    find_package(Gperftools REQUIRED)
+    include_directories(${GPERFTOOLS_INCLUDE_DIR})
+    list(APPEND SDR_LIBRARIES ${GPERFTOOLS_LIBRARIES} -Wl,-no_pie)
+    ADD_DEFINITIONS(-g)
+    ADD_DEFINITIONS(-fno-builtin-malloc)
+    ADD_DEFINITIONS(-fno-builtin-calloc)
+    ADD_DEFINITIONS(-fno-builtin-realloc)
+    ADD_DEFINITIONS(-fno-builtin-free)
+endif()
 
 ########################################################################
 # Setup the include and linker paths
 ########################################################################
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-	${LIBRTLSDR_INCLUDE_DIRS}
+    ${LIBRTLSDR_INCLUDE_DIRS}
 )
 
 ########################################################################

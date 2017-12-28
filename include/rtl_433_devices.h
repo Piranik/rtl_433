@@ -96,8 +96,12 @@
 		DECL(tpms_renault) \
 		DECL(infactory) \
 		DECL(ft004b) \
-		DECL(fordremote)
-
+		DECL(fordremote) \
+		DECL(philips) \
+		DECL(schrader_EG53MA4) \
+		DECL(nexa) \
+		DECL(thermopro_tp12) \
+		DECL(ge_coloreffects)
 
 typedef struct {
 	char name[256];
